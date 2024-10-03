@@ -1,0 +1,150 @@
+# These values configure the Grafana Mimir or Grafana Enterprise Metrics cluster to
+# handle production ingestion of ~1M series using the blocks storage engine scraped
+# with a 15s interval.
+# Query requirements can vary dramatically depending on query rate and query
+# ranges. The values here satisfy a "usual" query load as seen from our
+# production clusters at this scale.
+# It is important to ensure that you run no more than one ingester replica
+# per node so that a single node failure does not cause data loss. Zone aware
+# replication can be configured to ensure data replication spans availability
+# zones. Refer to [Zone Aware Replication](https://grafana.com/docs/mimir/v2.0.x/operators-guide/configuring/configuring-zone-aware-replication/)
+# for more information.
+# Minio is no longer enabled and you are encouraged to use your cloud providers
+# object storage service for production deployments.
+# Ingesters are configured with a replication factor of 3 to ensure that a single ingester failure does not
+# result in data loss.
+
+alertmanager:
+  persistentVolume:
+    enabled: true
+  replicas: 3
+  resources:
+    #limits:
+    #  memory: 8Gi
+    requests:
+      cpu: 30m
+      memory: 50Mi
+  statefulSet:
+    enabled: true
+
+compactor:
+  persistentVolume:
+    size: 4Gi
+  resources:
+    #limits:
+    #  cpu: 1200m
+    #  memory: 2Gi
+    requests:
+      cpu: 20m
+      memory: 50Mi
+
+distributor:
+  replicas: 1
+  resources:
+    #limits:
+    #  memory: 4Gi
+    requests:
+      cpu: 20m
+      memory: 50Mi
+
+ingester:
+  persistentVolume:
+    size: 1Gi
+  replicas: 1
+  resources:
+    #limits:
+    #  memory: 25Gi
+    requests:
+      cpu: 20m
+      memory: 50Mi
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: target
+                operator: In
+                values:
+                  - ingester
+          topologyKey: 'kubernetes.io/hostname'
+
+
+chunks-cache:
+  enabled: true
+  replicas: 1
+
+index-cache:
+  enabled: true
+  replicas: 1
+
+metadata-cache:
+  enabled: true
+
+results-cache:
+  enabled: true
+
+minio:
+  enabled: false
+
+overrides_exporter:
+  replicas: 1
+  resources:
+    #limits:
+    #  memory: 256Mi
+    requests:
+      cpu: 20m
+      memory: 50Mi
+
+querier:
+  replicas: 1
+  resources:
+    #limits:
+    #  memory: 24Gi
+    requests:
+      cpu: 20m
+      memory: 50Mi
+
+query_frontend:
+  replicas: 1
+  resources:
+    limits:
+      memory: 6Gi
+    requests:
+      cpu: 2
+      memory: 2Gi
+
+ruler:
+  replicas: 1
+  resources:
+    #limits:
+    #  memory: 16Gi
+    requests:
+      cpu: 20m
+      memory: 50Mi
+
+store_gateway:
+  persistentVolume:
+    size: 4Gi
+  replicas: 1
+  resources:
+    requests:
+      cpu: 20m
+      memory: 50Mi
+
+# Grafana Enterprise Metrics feature related
+admin_api:
+  replicas: 1
+  resources:
+    #limits:
+    #  cpu: 200m
+    #  memory: 256Mi
+    requests:
+      cpu: 10m
+      memory: 10Mi
+
+gateway:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 1
+      memory: 10Mi

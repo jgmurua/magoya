@@ -1,0 +1,56 @@
+name: Deploy Monitoring to Kubernetes
+
+on:
+     
+  workflow_dispatch:
+    inputs:
+      run:
+        description: 'run'
+        type: boolean
+        required: true
+        default: true
+    
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLUSTER_NAME: eks-simple
+      
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Update kubeconfig
+      run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region us-east-1
+
+    - name: Verify AWS Credentials
+      run: aws sts get-caller-identity
+
+    - name: Test kubectl connectivity
+      run: kubectl get nodes
+
+    - name: Checkout de manifiestos 
+      uses: actions/checkout@v2
+    
+    - name: Deploy Monitoring
+      run: |
+        helm repo add grafana https://grafana.github.io/helm-charts
+        helm repo add bitnami https://charts.bitnami.com/bitnami   
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo update
+        kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+        #loki
+        helm upgrade --install loki grafana/loki-stack --namespace monitoring
+        #prometheus
+        helm upgrade --install prometheus prometheus-community/prometheus \
+        --set alertmanager.persistentVolume.enabled=false \
+        --set server.persistentVolume.enabled=false \
+        --set pushgateway.persistentVolume.enabled=false \
+        --namespace monitoring
+        #grafana
+        helm upgrade --install grafana grafana/grafana --set persistence.enabled=false --namespace monitoring -f monitoring/datasource.yaml
+        kubectl apply -f monitoring/microservices-extras.yaml -n monitoring
