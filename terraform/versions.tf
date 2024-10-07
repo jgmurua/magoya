@@ -28,8 +28,8 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    key    = "terraform/aws/xxxxxxxxxxxx.tfstate"
+    bucket = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    key    = "terraform/aws/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.tfstate"
     region = "us-east-1"
 
     # For State Locking

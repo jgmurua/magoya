@@ -1,3 +1,4 @@
 .terraform.lock.hcl
 .terraform
 oidc_thumbprint.txt
+aws_auth.yaml
